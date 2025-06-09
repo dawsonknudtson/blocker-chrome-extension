@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 350px;
+      min-height: 400px;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #bbbdc4 0%, #515152 100%);
+      color: white;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 300;
+    }
+    
+    .status-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .timer {
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .status {
+      text-align: center;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    .control-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+      background: #4CAF50;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+      background: #f44336;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: #da190b;
+      transform: translateY(-2px);
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .section {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .section h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .site-list {
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    
+    .site-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      margin-bottom: 5px;
+    }
+    
+    .site-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .remove-btn {
+      background: #f44336;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .remove-btn:hover {
+      background: #da190b;
+    }
+    
+    .add-site {
+      display: flex;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    
+    .add-site input {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+    
+    .add-site button {
+      padding: 8px 12px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .add-site button:hover {
+      background: #45a049;
+    }
+    
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Deep Work Blocker</h1>
+  </div>
+  
+  <div class="status-card">
+    <div class="timer" id="timer">00:00:00</div>
+    <div class="status" id="status">Ready for deep work</div>
+  </div>
+  
+  <div class="control-buttons">
+    <button class="btn btn-primary" id="startBtn">Start Session</button>
+    <button class="btn btn-secondary" id="stopBtn" disabled>Stop Session</button>
+  </div>
+  
+  <div class="section">
+    <h3>Blocked Sites</h3>
+    <div class="site-list" id="siteList">
+      <!-- Sites will be populated here -->
+    </div>
+    <div class="add-site">
+      <input type="text" id="newSite" placeholder="Enter domain (e.g., facebook.com)">
+      <button id="addSiteBtn">Add</button>
+    </div>
+  </div>
+  
+  <div class="footer">
+    Stay focused, remember your goals
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html> 

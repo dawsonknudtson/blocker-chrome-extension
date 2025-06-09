@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Deep Work Mode - Site Blocked</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    
+    .container {
+      max-width: 600px;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      font-size: 32px;
+      margin-bottom: 20px;
+      font-weight: 300;
+    }
+    
+    p {
+      font-size: 18px;
+      margin-bottom: 30px;
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+    
+    .motivation {
+      font-size: 16px;
+      font-style: italic;
+      opacity: 0.8;
+      margin-bottom: 30px;
+    }
+    
+    .timer {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      font-family: 'Courier New', monospace;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+    
+    .suggestions {
+      text-align: left;
+      margin-top: 30px;
+    }
+    
+    .suggestions h3 {
+      margin-bottom: 15px;
+      color: #FFD700;
+    }
+    
+    .suggestions ul {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .suggestions li {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .suggestions li:before {
+      content: "💡 ";
+      margin-right: 8px;
+    }
+    
+    .back-btn {
+      margin-top: 30px;
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Deep Work Mode Active</h1>
+    <p>This website is currently blocked to help you maintain focus during your deep work session.</p>
+    
+    <div class="timer" id="sessionTimer">
+      Session in progress...
+    </div>
+    
+    <div class="suggestions">
+      <h3>Instead, try:</h3>
+      <ul>
+        <li>Work on your current project</li>
+        <li>Read a book or article</li>
+        <li>Practice meditation</li>
+        <li>Take a short walk</li>
+        <li>Organize your workspace</li>
+      </ul>
+    </div>
+    
+    <a href="javascript:history.back()" || "https://www.google.com" class="back-btn">← Go Back</a>
+  </div>
+  
+  <script>
+    // Simple timer to show session duration
+    let sessionStartTime = null;
+    
+    // Try to get session start time from storage
+    chrome.storage.local.get(['sessionStartTime'], (result) => {
+      if (result.sessionStartTime) {
+        sessionStartTime = result.sessionStartTime;
+        updateTimer();
+        setInterval(updateTimer, 1000);
+      }
+    });
+    
+    function updateTimer() {
+      if (!sessionStartTime) return;
+      
+      const elapsed = Date.now() - sessionStartTime;
+      const hours = Math.floor(elapsed / (1000 * 60 * 60));
+      const minutes = Math.floor((elapsed % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((elapsed % (1000 * 60)) / 1000);
+      
+      document.getElementById('sessionTimer').textContent = 
+        `Session time: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+  </script>
+</body>
+</html> 

@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Deep Work Blocker",
+  "version": "1.0.0",
+  "description": "Block distracting websites during deep work sessions with timer functionality",
+  "permissions": [
+    "storage",
+    "tabs",
+    "declarativeNetRequest",
+    "alarms"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Deep Work Blocker"
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  }
+} 
