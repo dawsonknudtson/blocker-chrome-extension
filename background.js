@@ -9,9 +9,16 @@ chrome.runtime.onInstalled.addListener(async () => {
   await initializeStorage();
 });
 
+// Listen for when blocking rules are triggered (for debugging)
+chrome.declarativeNetRequest.onRuleMatchedDebug.addListener((details) => {
+  console.log('🚫 BLOCKED:', details.request.url);
+  console.log('Rule that matched:', details.rule);
+});
+
 async function initializeStorage() {
   const result = await chrome.storage.local.get(['blockedSites', 'isDeepWorkActive', 'sessionStartTime']);
   
+  // Default blocked sites
   if (!result.blockedSites) {
     await chrome.storage.local.set({ 
       blockedSites: [
@@ -64,44 +71,104 @@ async function updateBlockingRules() {
   let ruleId = 1;
 
   blockedSites.forEach(site => {
-    // Create multiple rules to catch all variations of the domain
+    // Clean the site domain (remove any protocols, www, etc.)
+    const cleanSite = site.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+    
+    console.log(`Creating rules for domain: ${cleanSite}`);
+    
+    // Create VERY comprehensive rules to catch ALL variations
     const patterns = [
-      `*://*${site}/*`,           // Standard: https://x.com/anything
-      `*://${site}/*`,            // Direct: https://x.com/anything
-      `*://www.${site}/*`,        // With www: https://www.x.com/anything
-      `*://*.${site}/*`,          // Subdomains: https://subdomain.x.com/anything
-      `*://*${site}`,             // No trailing slash: https://x.com
-      `*://${site}`,              // Direct no slash: https://x.com
-      `*://www.${site}`,          // www no slash: https://www.x.com
-      `*://*.${site}`             // Subdomain no slash: https://sub.x.com
+      // Exact domain matches
+      `*://${cleanSite}`,
+      `*://${cleanSite}/`,
+      `*://${cleanSite}/*`,
+      `*://www.${cleanSite}`,
+      `*://www.${cleanSite}/`,
+      `*://www.${cleanSite}/*`,
+      
+      // HTTP specifically
+      `http://${cleanSite}`,
+      `http://${cleanSite}/`,
+      `http://${cleanSite}/*`,
+      `http://www.${cleanSite}`,
+      `http://www.${cleanSite}/`,
+      `http://www.${cleanSite}/*`,
+      
+      // HTTPS specifically  
+      `https://${cleanSite}`,
+      `https://${cleanSite}/`,
+      `https://${cleanSite}/*`,
+      `https://www.${cleanSite}`,
+      `https://www.${cleanSite}/`,
+      `https://www.${cleanSite}/*`,
+      
+      // Wildcard patterns for subdomains
+      `*://*.${cleanSite}`,
+      `*://*.${cleanSite}/`,
+      `*://*.${cleanSite}/*`,
+      
+      // Catch any URL containing the domain
+      `*://*${cleanSite}*`,
+      `http://*${cleanSite}*`,
+      `https://*${cleanSite}*`
     ];
 
-    patterns.forEach(pattern => {
-      rules.push({
-        id: ruleId++,
-        priority: 1,
-        action: {
-          type: "redirect",
-          redirect: {
-            url: chrome.runtime.getURL("blocked.html")
+    patterns.forEach((pattern, index) => {
+      if (ruleId <= 1000) { // Chrome has a limit on dynamic rules
+        rules.push({
+          id: ruleId++,
+          priority: 1,
+          action: {
+            type: "redirect",
+            redirect: {
+              url: chrome.runtime.getURL("blocked.html")
+            }
+          },
+          condition: {
+            urlFilter: pattern,
+            resourceTypes: ["main_frame"]
           }
-        },
-        condition: {
-          urlFilter: pattern,
-          resourceTypes: ["main_frame"]
+        });
+        
+        if (index < 5) { // Log first few patterns for debugging
+          console.log(`  Pattern ${index + 1}: ${pattern}`);
         }
-      });
+      }
     });
+    
+    console.log(`  Created ${Math.min(patterns.length, 1000 - (ruleId - patterns.length))} rules for ${cleanSite}`);
   });
 
   try {
+    // First clear all existing rules
+    console.log('Clearing existing blocking rules...');
     await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: Array.from({ length: 1000 }, (_, i) => i + 1), // Increased to handle more rules
+      removeRuleIds: Array.from({ length: 1000 }, (_, i) => i + 1)
+    });
+    
+    // Then add new rules
+    console.log(`Adding ${rules.length} new blocking rules...`);
+    await chrome.declarativeNetRequest.updateDynamicRules({
       addRules: rules
     });
-    console.log(`Updated blocking rules for ${blockedSites.length} sites with ${rules.length} total patterns`);
+    
+    console.log(`✅ Successfully updated blocking rules!`);
+    console.log(`📋 Blocked sites: ${blockedSites.join(', ')}`);
+    console.log(`🔢 Total rules created: ${rules.length}`);
+    
+    // Test a few specific patterns
+    const testSite = blockedSites[0];
+    if (testSite) {
+      console.log(`🧪 Test URLs that should be blocked for "${testSite}":`);
+      console.log(`   - https://${testSite}`);
+      console.log(`   - https://${testSite}/home`);
+      console.log(`   - http://${testSite}/anything`);
+      console.log(`   - https://www.${testSite}/page`);
+    }
+    
   } catch (error) {
-    console.error('Error updating blocking rules:', error);
+    console.error('❌ Error updating blocking rules:', error);
+    console.error('Failed rules:', rules.slice(0, 3));
   }
 }
 
@@ -119,13 +186,16 @@ async function clearBlockingRules() {
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   switch (request.action) {
     case 'startDeepWork':
+      console.log('Starting deep work session...');
       isDeepWorkActive = true;
       sessionStartTime = Date.now();
       await chrome.storage.local.set({ 
         isDeepWorkActive: true,
         sessionStartTime: sessionStartTime
       });
+      console.log('Applying blocking rules...');
       await updateBlockingRules();
+      console.log('Deep work session started successfully');
       sendResponse({ success: true });
       break;
       
