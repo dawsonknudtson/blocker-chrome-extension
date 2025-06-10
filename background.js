@@ -6,32 +6,57 @@ let blockedSites = [];
 
 // Initialize extension
 chrome.runtime.onInstalled.addListener(async () => {
+  console.log('Extension installed/updated - initializing storage...');
   await initializeStorage();
 });
 
-// Listen for when blocking rules are triggered (for debugging)
+// Also initialize when service worker starts up
+chrome.runtime.onStartup.addListener(async () => {
+  console.log('Extension service worker starting up - reloading data...');
+  await initializeStorage();
+});
+
+// Initialize immediately when service worker loads
+(async () => {
+  console.log('⚡ Service worker loaded - initializing...');
+  await initializeStorage();
+})();
+
+// Listen for when blocking rules are triggered
 chrome.declarativeNetRequest.onRuleMatchedDebug.addListener((details) => {
-  console.log('🚫 BLOCKED:', details.request.url);
+  console.log(' BLOCKED:', details.request.url);
   console.log('Rule that matched:', details.rule);
 });
 
 async function initializeStorage() {
   const result = await chrome.storage.local.get(['blockedSites', 'isDeepWorkActive', 'sessionStartTime']);
   
-  // Default blocked sites
-  if (!result.blockedSites) {
-    await chrome.storage.local.set({ 
-      blockedSites: [
-        'instagram.com',
-        'youtube.com',
-        'tiktok.com'
-      ] 
-    });
+  // Default blocked sites - only set if no blocked sites exist at all
+  if (!result.blockedSites || result.blockedSites.length === 0) {
+    const defaultSites = [
+      'instagram.com',
+      'youtube.com',
+      'tiktok.com'
+    ];
+    
+    // Only set defaults if this is truly a fresh install (no blockedSites key exists)
+    if (result.blockedSites === undefined) {
+      await chrome.storage.local.set({ 
+        blockedSites: defaultSites
+      });
+      blockedSites = defaultSites;
+    } else {
+      // If blockedSites exists but is empty array, keep it empty (user cleared all sites)
+      blockedSites = [];
+    }
+  } else {
+    blockedSites = result.blockedSites;
   }
   
-  blockedSites = result.blockedSites || [];
   isDeepWorkActive = result.isDeepWorkActive || false;
   sessionStartTime = result.sessionStartTime || null;
+  
+  console.log('🔧 Extension initialized with blocked sites:', blockedSites);
   
   if (isDeepWorkActive) {
     await updateBlockingRules();
@@ -41,7 +66,8 @@ async function initializeStorage() {
 // Listen for storage changes
 chrome.storage.onChanged.addListener(async (changes) => {
   if (changes.blockedSites) {
-    blockedSites = changes.blockedSites.newValue;
+    blockedSites = changes.blockedSites.newValue || [];
+    console.log('📝 Blocked sites updated:', blockedSites);
     if (isDeepWorkActive) {
       await updateBlockingRules();
     }
@@ -222,6 +248,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       if (request.site && !blockedSites.includes(request.site)) {
         blockedSites.push(request.site);
         await chrome.storage.local.set({ blockedSites });
+        console.log(' Added site:', request.site, 'Total sites:', blockedSites.length);
         if (isDeepWorkActive) {
           await updateBlockingRules();
         }
@@ -232,10 +259,26 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     case 'removeSite':
       blockedSites = blockedSites.filter(site => site !== request.site);
       await chrome.storage.local.set({ blockedSites });
+      console.log(' Removed site:', request.site, 'Remaining sites:', blockedSites.length);
       if (isDeepWorkActive) {
         await updateBlockingRules();
       }
       sendResponse({ success: true });
+      break;
+      
+    case 'getStorageInfo':
+      // Diagnostic function to check storage state
+      const storageData = await chrome.storage.local.get(null);
+      console.log('Full storage contents:', storageData);
+      sendResponse({ 
+        success: true, 
+        storage: storageData,
+        memoryState: {
+          blockedSites,
+          isDeepWorkActive,
+          sessionStartTime
+        }
+      });
       break;
   }
   

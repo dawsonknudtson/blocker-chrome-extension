@@ -172,6 +172,20 @@ function isValidDomain(domain) {
   return domainRegex.test(domain);
 }
 
+// Diagnostic function - you can call this from console if needed
+async function checkStorageStatus() {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'getStorageInfo' });
+    console.log('Storage diagnostics:', response);
+    return response;
+  } catch (error) {
+    console.error('Error checking storage:', error);
+  }
+}
+
+// Make it available globally for debugging
+window.checkStorageStatus = checkStorageStatus;
+
 // Clean up interval when popup closes
 window.addEventListener('beforeunload', () => {
   if (timerInterval) {
